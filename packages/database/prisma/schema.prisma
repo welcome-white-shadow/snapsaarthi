@@ -1,0 +1,39 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  email       String   @unique
+  mobileNumber String?  @unique
+  role        String   @default("STUDIO") // ADMIN, STUDIO
+  planType    String   @default("FREE")    // FREE, MICRO, PRO
+  subscriptionStatus String @default("ACTIVE") // ACTIVE, EXPIRED, CANCELLED
+  subscriptionExpiry DateTime?
+  name        String?
+  studioName  String?
+  studioSize  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  snaps       Snap[]
+}
+
+model Snap {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  clientName  String
+  clientPhone String?
+  category    String?
+  status      String   @default("Draft") // Draft, selection_active, completed
+  coverImage  String?
+  targetCount Int      @default(0)
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
