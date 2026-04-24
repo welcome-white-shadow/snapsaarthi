@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useScroll } from "framer-motion";
-import { Camera, Zap, Shield, Globe, ArrowRight, Menu, X, Check, Heart, Smile, Users, Star, MessageSquare, Layers, ArrowRightCircle, Rocket, Clock, Coins, ShieldCheck, Sparkles, Instagram, Twitter, Linkedin, Facebook, Mail } from "lucide-react";
+import { Camera, Zap, Shield, Globe, ArrowRight, Menu, X, Check, Heart, Smile, Users, Star, MessageSquare, Infinity as InfinityIcon, Layers, ArrowRightCircle, Rocket, Clock, Coins, ShieldCheck, Sparkles, Instagram, Twitter, Linkedin, Facebook, Mail } from "lucide-react";
 import Link from "next/link";
 
 export default function LandingPage() {
@@ -334,7 +334,7 @@ export default function LandingPage() {
               {
                 title: "No Limits",
                 desc: "Clients selecting 200+ photos for a 50-photo album.",
-                icon: <Infinity className="text-rose-400 w-4 h-4" />
+                icon: <InfinityIcon className="text-rose-400 w-4 h-4" />
               },
               {
                 title: "Paralysis",
