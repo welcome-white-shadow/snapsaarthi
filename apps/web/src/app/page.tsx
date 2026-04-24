@@ -43,8 +43,8 @@ export default function LandingPage() {
 
   // Combined Rotation - Optimized for mobile by reducing string concatenation complexity
   const combinedRotateX = useTransform(
-    [mobileRotateX, desktopRotateX],
-    ([mX, dX]) => {
+    [mobileRotateX, desktopRotateX] as any,
+    ([mX, dX]: any[]) => {
       if (typeof window !== "undefined" && window.innerWidth < 768) return `${mX}deg`;
       return `calc(${mX}deg + ${dX})`;
     }
