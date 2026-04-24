@@ -4,7 +4,7 @@ import { MongoClient } from "mongodb";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const email = body.email?.toLowerCase().trim();
+    const email = body.email?.toLowerCase().trim() || null;
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });

@@ -15,10 +15,10 @@ async function handleDashboard(request: Request) {
     
     if (request.method === "POST") {
       const body = await request.json();
-      email = body.email?.toLowerCase().trim();
+      email = body.email?.toLowerCase().trim() || null;
     } else {
       const { searchParams } = new URL(request.url);
-      email = searchParams.get("email")?.toLowerCase().trim();
+      email = searchParams.get("email")?.toLowerCase().trim() || null;
     }
 
     if (!email) {
