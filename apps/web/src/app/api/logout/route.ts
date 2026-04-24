@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       { _id: new ObjectId(userId) },
       { 
         $pull: { activeSessions: { sessionId: sessionId } } 
-      }
+      } as any
     );
 
     await client.close();
