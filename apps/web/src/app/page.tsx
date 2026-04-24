@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useScroll } from "framer-motion";
-import { Camera, Zap, Shield, Globe, ArrowRight, Menu, X, Check, Heart, Smile, Users, Star, MessageSquare, Infinity, Layers, ArrowRightCircle, Rocket, Clock, Coins, ShieldCheck, Sparkles, Instagram, Twitter, Linkedin, Facebook, Mail } from "lucide-react";
+import { Camera, Zap, Shield, Globe, ArrowRight, Menu, X, Check, Heart, Smile, Users, Star, MessageSquare, Layers, ArrowRightCircle, Rocket, Clock, Coins, ShieldCheck, Sparkles, Instagram, Twitter, Linkedin, Facebook, Mail } from "lucide-react";
 import Link from "next/link";
 
 export default function LandingPage() {
