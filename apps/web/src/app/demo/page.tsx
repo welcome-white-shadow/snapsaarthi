@@ -1,3 +1,5 @@
+"use client";
+
 import { Shield, Camera, Users, Zap, Briefcase, Plus, Search, Filter, Bell, ArrowUpRight, Share2, Settings, MessageSquare, CheckCircle2 } from "lucide-react";
 
 export default function DemoSandbox() {
