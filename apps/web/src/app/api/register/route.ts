@@ -3,30 +3,29 @@ import { MongoClient } from "mongodb";
 
 export async function POST(request: Request) {
   try {
-    const { email, name, studioName, studioSize, mobileNumber } = await request.json();
+    const body = await request.json();
+    const email = body.email?.toLowerCase().trim();
+    const { name, studioName, studioSize, mobileNumber } = body;
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    if (!mobileNumber) {
-      return NextResponse.json({ error: "Mobile number is required" }, { status: 400 });
-    }
-
-    // Connect to Standalone MongoDB natively (Bypassing Prisma's Replica Set lock!)
     const url = process.env.DATABASE_URL || "mongodb://localhost:27017/snapsaarthi";
-    // Ensure we parse the base URL properly
     const client = new MongoClient(url.split('?')[0]);
     await client.connect();
     
-    // Connect to specific snapping database (database name usually extracted from URL, fallback to snapsaarthi)
-    const dbName = url.includes('/snapsaarthi') ? 'snapsaarthi' : 'test';
+    // Improved database resolution
+    const dbName = url.includes('snapsaarthi') ? 'snapsaarthi' : 'test';
     const db = client.db(dbName);
-    const usersCollection = db.collection("User"); // Prisma defaults to exact model name
+    const usersCollection = db.collection("User");
 
-    // Check if user exists by email OR mobile number
+    // Case-insensitive check (though we store lowercase, we check for both to be safe)
     let existingUser = await usersCollection.findOne({ 
-      $or: [{ email }, { mobileNumber }] 
+      $or: [
+        { email: email }, 
+        { mobileNumber: mobileNumber }
+      ] 
     });
 
     if (existingUser) {
@@ -35,15 +34,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `${field} is already registered! Please log in instead.` }, { status: 409 });
     }
 
-    // Insert new user
     const newUser = {
-      email,
+      email: email,
       mobileNumber,
       name: name || "",
       studioName: studioName || "",
       studioSize: studioSize || "solo",
-      role: email.toLowerCase() === process.env.SUPER_ADMIN_EMAIL?.toLowerCase() ? "ADMIN" : "STUDIO",
-      planType: email.toLowerCase() === process.env.SUPER_ADMIN_EMAIL?.toLowerCase() ? "PRO" : "FREE",
+      role: email === process.env.SUPER_ADMIN_EMAIL?.toLowerCase() ? "ADMIN" : "STUDIO",
+      planType: email === process.env.SUPER_ADMIN_EMAIL?.toLowerCase() ? "PRO" : "FREE",
       subscriptionStatus: "ACTIVE",
       createdAt: new Date(),
       updatedAt: new Date()

@@ -19,7 +19,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = "register" }:
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -37,21 +36,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "register" }:
     if (!formData.email) return;
     setLoading(true);
     
-    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(newOtp);
-
-    const emailHtml = `
-      <div style="background-color: #020202; color: #ffffff; font-family: sans-serif; padding: 40px; border-radius: 20px; max-width: 600px; margin: auto; border: 1px solid #1e1b4b;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="font-size: 28px; font-weight: 900; margin: 0; letter-spacing: -1px; font-style: italic;">SnapSaarthi <span style="color: #4f46e5;">OS</span></h1>
-        </div>
-        <div style="background-color: #0a0a0a; border: 1px solid #ffffff10; padding: 30px; border-radius: 24px; text-align: center;">
-          <p style="color: #94a3b8; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin-bottom: 10px;">Verification Code</p>
-          <h2 style="font-size: 48px; font-weight: 900; color: #ffffff; margin: 0; letter-spacing: 5px;">${newOtp}</h2>
-          <p style="color: #64748b; font-size: 14px; margin-top: 20px;">Use this code to verify your identity and access your studio command center.</p>
-        </div>
-      </div>
-    `;
+    const normalizedEmail = formData.email.toLowerCase().trim();
 
     try {
       if (mode === "login") {
@@ -85,7 +70,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "register" }:
       const resp = await fetch("/api/otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: formData.email, subject: `${newOtp} is your Login Code`, message: emailHtml })
+        body: JSON.stringify({ email: normalizedEmail })
       });
       if (resp.ok) {
         setStep(1.5);
@@ -125,17 +110,30 @@ export default function AuthModal({ isOpen, onClose, initialMode = "register" }:
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
       sendOTP();
     } 
     else if (step === 1.5) { 
-      // Master Bypass for Admin or correctly verified OTP
-      const pendingData = sessionStorage.getItem("pending_user");
-      const pendingUser = pendingData ? JSON.parse(pendingData) : null;
-      
-      if (otp === generatedOtp || (pendingUser?.role === "ADMIN" && otp === "999999")) {
+      setLoading(true);
+      try {
+        const verifyResp = await fetch("/api/otp", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email, code: otp })
+        });
+
+        if (!verifyResp.ok) {
+          const errData = await verifyResp.json();
+          error(errData.error || "Incorrect code. Try again.");
+          setLoading(false);
+          return;
+        }
+
+        const pendingData = sessionStorage.getItem("pending_user");
+        const pendingUser = pendingData ? JSON.parse(pendingData) : null;
+        
         if (mode === "login") {
           const userData = sessionStorage.getItem("pending_user");
           if (userData) {
@@ -148,8 +146,11 @@ export default function AuthModal({ isOpen, onClose, initialMode = "register" }:
           setStep(2);
           success("Email verified!");
         }
-      } 
-      else error("Incorrect code. Try again."); 
+      } catch (err) {
+        error("Verification failed. Check connection.");
+      } finally {
+        setLoading(false);
+      }
     }
     else if (step === 2) {
       finalizeRegistration();

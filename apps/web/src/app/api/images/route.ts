@@ -24,25 +24,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No files uploaded" }, { status: 400 });
     }
 
-    const uploadDir = join(process.cwd(), "public/uploads");
-    await mkdir(uploadDir, { recursive: true }).catch(() => {});
+    const uploadDir = join(process.cwd(), "public", "uploads");
+    await mkdir(uploadDir, { recursive: true });
 
-    const uploadedPhotos = [];
+    const uploadPromises = files.map(async (file) => {
+      try {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+        const filePath = join(uploadDir, fileName);
+        
+        await writeFile(filePath, buffer);
+        
+        return {
+          id: Math.random().toString(36).substring(2, 11),
+          url: `/uploads/${fileName}`,
+          name: file.name,
+          uploadedAt: new Date()
+        };
+      } catch (e) {
+        console.error(`Failed to upload individual file ${file.name}:`, e);
+        return null;
+      }
+    });
 
-    for (const file of files) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name.replace(/\s+/g, '-')}`;
-      const filePath = join(uploadDir, fileName);
-      
-      await writeFile(filePath, buffer).catch(() => {});
-      
-      uploadedPhotos.push({
-        id: Math.random().toString(36).substr(2, 9),
-        url: `/uploads/${fileName}`,
-        name: file.name,
-        uploadedAt: new Date()
-      });
+    const results = await Promise.all(uploadPromises);
+    const uploadedPhotos = results.filter(p => p !== null);
+
+    if (uploadedPhotos.length === 0) {
+      return NextResponse.json({ error: "All image uploads failed." }, { status: 500 });
     }
 
     // Update MongoDB
@@ -51,7 +61,7 @@ export async function POST(request: Request) {
     
     await snapsCol.updateOne(
       { _id: new ObjectId(albumId) },
-      { $push: { photos: { $each: uploadedPhotos } } }
+      { $push: { photos: { $each: uploadedPhotos } } } as any
     );
     
     await client.close();

@@ -15,10 +15,10 @@ async function handleDashboard(request: Request) {
     
     if (request.method === "POST") {
       const body = await request.json();
-      email = body.email;
+      email = body.email?.toLowerCase().trim();
     } else {
       const { searchParams } = new URL(request.url);
-      email = searchParams.get("email");
+      email = searchParams.get("email")?.toLowerCase().trim();
     }
 
     if (!email) {
@@ -39,8 +39,21 @@ async function handleDashboard(request: Request) {
     let user: any = null;
     let notifications: any[] = [];
     if (rawUser) {
-      // Find snaps associated with user manually
-      const snaps = await snapsCol.find({ userId: rawUser._id.toString() }).sort({ createdAt: -1 }).toArray();
+      // Defensive query: handle both string and ObjectId if possible
+      let query: any = { userId: rawUser._id.toString() };
+      try {
+        query = { 
+          $or: [
+            { userId: rawUser._id.toString() },
+            { userId: rawUser._id }
+          ] 
+        };
+      } catch (e) {
+        // Fallback
+        query = { userId: rawUser._id.toString() };
+      }
+
+      const snaps = await snapsCol.find(query).sort({ createdAt: -1 }).toArray();
       user = { ...rawUser, snaps, id: rawUser._id.toString() };
 
       const notificationsCol = db.collection("notifications");

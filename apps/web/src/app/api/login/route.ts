@@ -3,7 +3,8 @@ import { MongoClient } from "mongodb";
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const body = await request.json();
+    const email = body.email?.toLowerCase().trim();
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -34,17 +35,16 @@ export async function POST(request: Request) {
     
     // Cleanup sessions older than 24h
     const now = new Date();
-    const activeSessions = (user.activeSessions || []).filter((s: any) => {
+    let activeSessions = (user.activeSessions || []).filter((s: any) => {
        const sessionDate = new Date(s.createdAt);
        return (now.getTime() - sessionDate.getTime()) < 24 * 60 * 60 * 1000;
     });
 
+    // If still over limit, remove oldest session(s) to make room for new one
     if (activeSessions.length >= limit) {
-       await client.close();
-       return NextResponse.json({ 
-         error: `Device Limit Reached! This account is active on ${activeSessions.length} devices. Please logout from another device.`,
-         code: "SESSION_LIMIT_REACHED"
-       }, { status: 403 });
+       // Sort by date and take only (limit - 1) most recent sessions
+       activeSessions.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+       activeSessions = activeSessions.slice(0, limit - 1);
     }
 
     const sessionId = Math.random().toString(36).substring(2, 15);

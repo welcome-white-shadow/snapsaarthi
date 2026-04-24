@@ -73,16 +73,23 @@ export async function POST(request: Request) {
 
     let coverImageUrl = "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=1000";
 
-    if (imageFile && typeof imageFile !== "string") {
-      const bytes = await imageFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      // We know we are running locally so this is fine for dev
-      const uploadDir = join(process.cwd(), "public/uploads");
-      await mkdir(uploadDir, { recursive: true }).catch(() => {});
-      const fileName = `${Date.now()}-${imageFile.name}`;
-      const path = join(uploadDir, fileName);
-      await writeFile(path, buffer).catch(() => {}); // Catch write errors silently to not break flow
-      coverImageUrl = `/uploads/${fileName}`;
+    if (imageFile && typeof imageFile !== "string" && imageFile.size > 0) {
+      try {
+        const bytes = await imageFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const uploadDir = join(process.cwd(), "public", "uploads");
+        
+        await mkdir(uploadDir, { recursive: true });
+        const fileName = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+        const filePath = join(uploadDir, fileName);
+        
+        await writeFile(filePath, buffer);
+        coverImageUrl = `/uploads/${fileName}`;
+        console.log("Cover image uploaded successfully:", coverImageUrl);
+      } catch (uploadError) {
+        console.error("Image Upload Failed, using default:", uploadError);
+        // Keep default coverImageUrl
+      }
     }
 
     const albumData = {
@@ -93,7 +100,7 @@ export async function POST(request: Request) {
       coverImage: coverImageUrl,
       targetCount: targetCount ? parseInt(targetCount) : 0,
       status: "Draft",
-      userId: targetUserId,
+      userId: targetUserId.toString(), // Force string storage
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -127,7 +134,21 @@ export async function GET(request: Request) {
     const { db, client } = await getDb();
     const snapsCol = db.collection("Snap");
     
-    const snaps = await snapsCol.find({ userId }).sort({ createdAt: -1 }).toArray();
+    // Defensive query: handle both string and ObjectId if possible
+    let query: any = { userId };
+    try {
+      query = { 
+        $or: [
+          { userId: userId },
+          { userId: new ObjectId(userId) }
+        ] 
+      };
+    } catch (e) {
+      // Fallback if userId is not a valid ObjectId
+      query = { userId: userId };
+    }
+
+    const snaps = await snapsCol.find(query).sort({ createdAt: -1 }).toArray();
     await client.close();
 
     const albums = snaps.map(snap => ({

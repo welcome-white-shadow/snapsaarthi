@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("All");
-  const [showAllAlbums, setShowAllAlbums] = useState(false);
+  const [showAllAlbums, setShowAllAlbums] = useState(true); // Changed to true by default
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -605,7 +605,6 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
                     {albums
                       .filter(a => filterStatus === "All" || a.status === filterStatus)
-                      .slice(0, showAllAlbums ? albums.length : 6)
                       .map((album, i) => (
                       <motion.div
                         key={album.id}
