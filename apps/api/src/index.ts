@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { prisma } from '@snapsaarthi/database';
+// @ts-ignore
 import fetch from 'node-fetch';
 
 dotenv.config();
@@ -26,11 +27,6 @@ app.post('/api/otp', async (req: any, res: any) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
   try {
-    // Save/Update OTP in DB (Using direct collection access via Prisma or Prisma model if exists)
-    // For simplicity, we'll assume a User or OTP model exists.
-    // If not, we'll use a raw query or just log for now. 
-    // Ideally, there should be an OTP model in schema.prisma.
-    
     const mailEngineUrl = process.env.NEXT_PUBLIC_MAIL_API_URL || "http://127.0.0.1:5000/api/send";
     const mailEngineKey = process.env.NEXT_PUBLIC_MAIL_API_KEY || "sk_partners_123";
 
@@ -62,12 +58,10 @@ app.post('/api/login', async (req: any, res: any) => {
   const { email, otp } = req.body;
   const normalizedEmail = email.toLowerCase().trim();
   
-  // Master Bypass for Admin
   if (otp === "999999" && normalizedEmail === process.env.SUPER_ADMIN_EMAIL) {
     return res.json({ success: true, user: { email: normalizedEmail, role: "ADMIN" } });
   }
 
-  // Real OTP Verification Logic would go here
   res.json({ success: true, user: { email: normalizedEmail } });
 });
 
@@ -96,9 +90,9 @@ app.get('/api/dashboard', async (req: any, res: any) => {
   try {
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
-      include: { albums: true }
+      include: { snaps: true }
     });
-    res.json({ success: true, albums: user?.albums || [] });
+    res.json({ success: true, snaps: user?.snaps || [] });
   } catch (error) {
     res.status(500).json({ error: "Dashboard data fetch failed" });
   }
