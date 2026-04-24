@@ -41,9 +41,14 @@ export async function POST(request: Request) {
 
     await fetch(mailEngineUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": mailEngineKey },
+      headers: { 
+        "Content-Type": "application/json", 
+        "x-api-key": mailEngineKey,
+        "key": mailEngineKey,
+        "Authorization": `Bearer ${mailEngineKey}`
+      },
       body: JSON.stringify({
-        from: "SnapSaarthi <noreply@snapsaarthi.com>",
+        from: "SnapSaarthi OS <noreply@blinke.in>",
         to: normalizedEmail,
         subject: `${otp} is your Login Code`,
         html: emailHtml
